@@ -1,0 +1,7 @@
+/target
+/bootloader/target
+/asteria-bootloader/target
+/asteria-bootloader/Cargo.lock
+/asteria-bootloader/.cargo/config.toml
+/asteria-bootloader/esp/*
+Cargo.lock
