@@ -44,24 +44,26 @@ extern "efiapi" fn efi_main(_image: usize, system_table: *mut  EfiSystemTable) -
     unsafe {
         let stdout = (*system_table).con_out;
 
-        //  UTF-16 string for "Hello, world!"
-        let hello_world: [u16; 14] = [
-            'H' as u16,
-            'e' as u16,
-            'l' as u16,
-            'l' as u16,
+        //  UTF-16 string for "Bootloader"
+        let hello_world: [u16; 15] = [
+            'B' as u16,
             'o' as u16,
-            ',' as u16,
+            'o' as u16,
+            't' as u16,
+            'i' as u16,
+            'n' as u16,
+            'g' as u16,
             ' ' as u16,
-            'f' as u16,-
-            'u' as u16,
-            'c' as u16,
-            'k' as u16,
+            'A' as u16,
             's' as u16,
-            '!' as u16,
-            0, // Null terminator
+            't' as u16,
+            'e' as u16,
+            'r' as u16,
+            'i' as u16,
+            'a' as u16,
         ]; 
         ((*stdout).output_string)(stdout, hello_world.as_ptr());
     }
+    loop{}
     0
 }
