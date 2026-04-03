@@ -4,4 +4,11 @@
 /asteria-bootloader/Cargo.lock
 /asteria-bootloader/.cargo/config.toml
 /asteria-bootloader/esp/*
-Cargo.lock
+Cargo.lock/
+/.vscode/*
+/.github/*
+/asteria-kernel/target/*
+/esp/
+/asteria-kernel/Cargo.lock
+/asteria-bootloader/Cargo.lock
+/asteria-kernel/.rustc_info.json

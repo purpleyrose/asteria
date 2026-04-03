@@ -13,10 +13,10 @@ else
 	EFI_NAME          := BOOTX64.EFI
 	QEMU              := qemu-system-x86_64
 	MACHINE           :=
-	BIOS              := -bios /opt/homebrew/share/ovmf/OVMF.fd
+	BIOS              := -bios /usr/share/ovmf/x64/OVMF.4m.fd
 endif
 
-.PHONY: build build-bootloader build-kernel run
+.PHONY: build build-bootloader build-kernel run run-gui
 
 build: build-bootloader build-kernel
 
@@ -34,3 +34,12 @@ run: build
 		$(BIOS) \
 		-drive format=raw,file=fat:rw:esp \
 		-nographic
+
+run-gui: build
+	mkdir -p esp/EFI/BOOT
+	cp asteria-bootloader/target/$(BOOTLOADER_TARGET)/release/asteria-bootloader.efi esp/EFI/BOOT/$(EFI_NAME)
+	$(QEMU) \
+		$(MACHINE) \
+		$(BIOS) \
+		-drive format=raw,file=fat:rw:esp \
+		-display gtk
