@@ -7,6 +7,7 @@ ifeq ($(ARCH), arm64)
 	QEMU              := qemu-system-aarch64
 	MACHINE           := -machine virt -cpu cortex-a72
 	BIOS              := -bios /opt/homebrew/share/qemu/edk2-aarch64-code.fd
+	GUIS              := -display default
 else
 	BOOTLOADER_TARGET := x86_64-unknown-uefi
 	KERNEL_TARGET     := x86_64-unknown-none
@@ -14,6 +15,7 @@ else
 	QEMU              := qemu-system-x86_64
 	MACHINE           :=
 	BIOS              := -bios /usr/share/ovmf/x64/OVMF.4m.fd
+	GUIS              := -display gtk
 endif
 
 .PHONY: build build-bootloader build-kernel run run-gui
@@ -42,4 +44,4 @@ run-gui: build
 		$(MACHINE) \
 		$(BIOS) \
 		-drive format=raw,file=fat:rw:esp \
-		-display gtk
+		$(GUIS)

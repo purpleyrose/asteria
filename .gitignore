@@ -8,7 +8,7 @@ Cargo.lock/
 /.vscode/*
 /.github/*
 /asteria-kernel/target/*
-/esp/
+/esp/EFI/BOOT/*
 /asteria-kernel/Cargo.lock
 /asteria-bootloader/Cargo.lock
 /asteria-kernel/.rustc_info.json
