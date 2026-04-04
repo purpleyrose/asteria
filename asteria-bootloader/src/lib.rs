@@ -2,6 +2,26 @@
 
 pub mod parser;
 
+pub const EFI_LOADED_IMAGE_PROTOCOL_GUID: EfiGuid = EfiGuid {
+    data1: 0x5B1B31A1,
+    data2: 0x9562,
+    data3: 0x11D2,
+    data4: [0x8E, 0x3F, 0x00, 0xA0, 0xC9, 0x69, 0x72, 0x3B],
+};
+
+pub const EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID: EfiGuid = EfiGuid {
+    data1: 0x964e5b22,
+    data2: 0x6459,
+    data3: 0x11d2,
+    data4: [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b],
+};
+
+pub const EFI_FILE_INFO_GUID: EfiGuid = EfiGuid {
+    data1: 0x09576e92,
+    data2: 0x6d3f,
+    data3: 0x11d2,
+    data4: [0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b],
+};
 
 #[repr(C)]
 pub struct EfiSystemTable {
@@ -70,7 +90,7 @@ pub struct EfiBootServices {
     pub open_protocol_information: usize,
     pub protocols_per_handle: usize,
     pub locate_handle_buffer: usize,
-    pub locate_protocol: usize,
+    pub locate_protocol: extern "efiapi" fn(*const EfiGuid, *mut usize, *mut *mut usize) -> usize,
     pub install_multiple_protocol_interfaces: usize,
     pub uninstall_multiple_protocol_interfaces: usize,
     pub calculate_crc32: usize, // 32-bit CRC calculation function
@@ -177,6 +197,33 @@ pub enum MemoryType {
     EfiPersistentMemory = 14,
     EfiUnacceptedMemoryType = 15,
     EfiMaxMemoryType = 16,
+}
+
+#[repr(C)]
+pub struct EfiFileInfo {
+    pub size: u64,
+    pub file_size: u64,
+    pub physical_size: u64,
+    pub create_time: EfiTime,
+    pub last_access_time: EfiTime,
+    pub modification_time: EfiTime,
+    pub attribute: u64,
+   pub file_name: [u16; 1], // Null-terminated UTF-16 string for the file name
+}
+
+#[repr(C)]
+pub struct EfiTime {
+    pub year: u16,
+    pub month: u8,
+    pub day: u8,
+    pub hour: u8,
+    pub minute: u8,
+    pub second: u8,
+    pub pad1: u8, // Padding to align to 4 bytes
+    pub nanosecond: u32,
+    pub time_zone: i16,
+    pub daylight: u8,
+    pub pad2: u8, // Padding to align to 4 bytes    
 }
 
 #[repr(C)]

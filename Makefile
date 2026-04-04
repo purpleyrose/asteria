@@ -29,15 +29,19 @@ build-kernel:
 run: build
 	mkdir -p esp/EFI/BOOT
 	cp asteria-bootloader/target/$(BOOTLOADER_TARGET)/release/asteria-bootloader.efi esp/EFI/BOOT/$(EFI_NAME)
+	cp asteria-kernel/target/$(KERNEL_TARGET)/release/asteria-kernel esp/kernel.elf
 	$(QEMU) \
 		$(MACHINE) \
 		$(BIOS) \
 		-drive format=raw,file=fat:rw:esp \
-		-nographic
+		-serial file:/tmp/asteria-serial.log \
+		-display none \
+		-no-reboot
 
 run-gui: build
 	mkdir -p esp/EFI/BOOT
 	cp asteria-bootloader/target/$(BOOTLOADER_TARGET)/release/asteria-bootloader.efi esp/EFI/BOOT/$(EFI_NAME)
+	cp asteria-kernel/target/$(KERNEL_TARGET)/release/asteria-kernel esp/kernel.elf
 	$(QEMU) \
 		$(MACHINE) \
 		$(BIOS) \

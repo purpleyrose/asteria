@@ -9,22 +9,16 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
 #[unsafe(no_mangle)]
 pub extern "C" fn kernel_main() -> ! {
     unsafe {
-        #[cfg(target_arch = "x86_64")]
         core::arch::asm!(
-            "mov dx, 0x3F8",
-            "mov al, {c}",
+            "mov dx, 0x3FB",
+            "mov al, 0x03",   // 8N1, clear DLAB
             "out dx, al",
-            c = const b'K',
+            "mov dx, 0x3F8",
+            "mov al, 0x4B",
+            "out dx, al",
             out("dx") _,
             out("al") _,
         );
-
-        // PL011 UART on QEMU virt machine
-        #[cfg(target_arch = "aarch64")]
-        {
-            let uart = 0x09000000 as *mut u8;
-            uart.write_volatile(b'K');
-        }
     }
     loop {}
 }
