@@ -18,6 +18,7 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
+
 unsafe fn serial_print(msg: &[u8]) {
     for &b in msg {
         unsafe{ 

@@ -1,6 +1,6 @@
-[package]
-name = "asteria"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
+[workspace]
+members = [
+    "asteria-bootloader",
+    "asteria-kernel",
+]
+resolver = "2"
