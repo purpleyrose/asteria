@@ -78,7 +78,13 @@ extern "efiapi" fn efi_main(image: usize, system_table: *mut  EfiSystemTable) ->
         ((*kernel_file).read)(kernel_file, &mut read_size, kernel_buffer as *mut u8);
         serial_print(b"7: read done\n");
 
-        let entry_point = parser::load_elf(kernel_buffer as *const u8, load_buffer).unwrap();
+        let entry_point = match parser::load_elf(kernel_buffer as *const u8, load_buffer) {
+            Some(entry) => entry,
+            None => {
+                serial_print(b"Failed to load ELF file\n");
+                loop {}
+            }
+        };
         serial_print(b"8: load_elf done\n");
 
         let mut memory_map_size: usize = 0;
@@ -87,9 +93,10 @@ extern "efiapi" fn efi_main(image: usize, system_table: *mut  EfiSystemTable) ->
         let mut descriptor_version: u32 = 0;
         ((*boot_services).get_memory_map)(&mut memory_map_size, core::ptr::null_mut(), &mut map_key, &mut descriptor_size, &mut descriptor_version);
 
-        let mut memory_map_buffer: [u8; 4096 * 4] = [0; 4096 *4];
-        memory_map_size = core::mem::size_of_val(&memory_map_buffer);
-        ((*boot_services).get_memory_map)(&mut memory_map_size, memory_map_buffer.as_mut_ptr() as *mut _, &mut map_key, &mut descriptor_size, &mut descriptor_version);
+        let mut memory_map_buffer: u64 = 0;
+        ((*boot_services).allocate_pages)(AllocateType::AllocateAnyPages, MemoryType::EfiLoaderData, 4, &mut memory_map_buffer);
+        memory_map_size = 4 * 0x1000;
+        ((*boot_services).get_memory_map)(&mut memory_map_size, memory_map_buffer as *mut _, &mut map_key, &mut descriptor_size, &mut descriptor_version);
         serial_print(b"9: get_memory_map done\n");
 
         ((*boot_services).exit_boot_services)(image, map_key);

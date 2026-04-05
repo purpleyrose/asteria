@@ -16,7 +16,7 @@ else
 	BIOS              := -bios /usr/share/ovmf/x64/OVMF.4m.fd
 endif
 
-.PHONY: build build-bootloader build-kernel run run-gui
+.PHONY: build build-bootloader build-kernel run run-gui clean
 
 build: build-bootloader build-kernel
 
@@ -28,8 +28,8 @@ build-kernel:
 
 run: build
 	mkdir -p esp/EFI/BOOT
-	cp asteria-bootloader/target/$(BOOTLOADER_TARGET)/release/asteria-bootloader.efi esp/EFI/BOOT/$(EFI_NAME)
-	cp asteria-kernel/target/$(KERNEL_TARGET)/release/asteria-kernel esp/kernel.elf
+	cp target/$(BOOTLOADER_TARGET)/release/asteria-bootloader.efi esp/EFI/BOOT/$(EFI_NAME)
+	cp target/$(KERNEL_TARGET)/release/asteria-kernel esp/kernel.elf
 	$(QEMU) \
 		$(MACHINE) \
 		$(BIOS) \
@@ -38,10 +38,14 @@ run: build
 		-display none \
 		-no-reboot
 
+clean:
+	cargo clean
+	rm -rf esp
+
 run-gui: build
 	mkdir -p esp/EFI/BOOT
-	cp asteria-bootloader/target/$(BOOTLOADER_TARGET)/release/asteria-bootloader.efi esp/EFI/BOOT/$(EFI_NAME)
-	cp asteria-kernel/target/$(KERNEL_TARGET)/release/asteria-kernel esp/kernel.elf
+	cp target/$(BOOTLOADER_TARGET)/release/asteria-bootloader.efi esp/EFI/BOOT/$(EFI_NAME)
+	cp target/$(KERNEL_TARGET)/release/asteria-kernel esp/kernel.elf
 	$(QEMU) \
 		$(MACHINE) \
 		$(BIOS) \

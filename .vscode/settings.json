@@ -1,5 +1,5 @@
 {
     "makefile.configureOnOpen": false,
     "rust-analyzer.checkOnSave": false,
-    "rust-analyzer.diagnostics.enable": false
+    "rust-analyzer.diagnostics.enable": true
 }
