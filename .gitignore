@@ -12,3 +12,13 @@
 
 # Rust build cache
 .rustc_info.json
+
+/.claude/*
+
+/.vscode/*
+
+/.git/*
+
+qemu-debug.log
+
+asteria-serial.log

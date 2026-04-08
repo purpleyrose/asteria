@@ -28,24 +28,26 @@ build-kernel:
 
 run: build
 	mkdir -p esp/EFI/BOOT
-	cp target/$(BOOTLOADER_TARGET)/release/asteria-bootloader.efi esp/EFI/BOOT/$(EFI_NAME)
-	cp target/$(KERNEL_TARGET)/release/asteria-kernel esp/kernel.elf
+	cp asteria-bootloader/target/$(BOOTLOADER_TARGET)/release/asteria-bootloader.efi esp/EFI/BOOT/$(EFI_NAME)
+	cp asteria-kernel/target/$(KERNEL_TARGET)/release/asteria-kernel esp/kernel.elf
 	$(QEMU) \
 		$(MACHINE) \
 		$(BIOS) \
 		-drive format=raw,file=fat:rw:esp \
-		-serial file:/tmp/asteria-serial.log \
+		-serial file:asteria-serial.log \
 		-display none \
-		-no-reboot
+		-no-reboot \
+		-d int,cpu_reset -D qemu-debug.log
 
 clean:
-	cargo clean
+	cargo clean --manifest-path asteria-bootloader/Cargo.toml
+	cargo clean --manifest-path asteria-kernel/Cargo.toml
 	rm -rf esp
 
 run-gui: build
 	mkdir -p esp/EFI/BOOT
-	cp target/$(BOOTLOADER_TARGET)/release/asteria-bootloader.efi esp/EFI/BOOT/$(EFI_NAME)
-	cp target/$(KERNEL_TARGET)/release/asteria-kernel esp/kernel.elf
+	cp asteria-bootloader/target/$(BOOTLOADER_TARGET)/release/asteria-bootloader.efi esp/EFI/BOOT/$(EFI_NAME)
+	cp asteria-kernel/target/$(KERNEL_TARGET)/release/asteria-kernel esp/kernel.elf
 	$(QEMU) \
 		$(MACHINE) \
 		$(BIOS) \

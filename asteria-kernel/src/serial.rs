@@ -1,6 +1,5 @@
 use core::fmt;
 
-
 pub struct Serial;
 
 impl fmt::Write for Serial {
@@ -26,5 +25,13 @@ macro_rules! print {
             let mut serial = $crate::serial::Serial;
             let _ = core::write!(serial, $($arg)*);
         }
+    };
+}
+
+#[macro_export]
+macro_rules! println {
+    ($($arg:tt)*) => {
+        $crate::print!($($arg)*);
+        $crate::print!("\n");
     };
 }

@@ -12,5 +12,6 @@ panic = "abort"
 
 [profile.release]
 panic = "abort"
+opt-level = 3
 
 [build-dependencies]
