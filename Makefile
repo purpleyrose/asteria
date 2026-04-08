@@ -37,7 +37,6 @@ run: build
 		-serial file:asteria-serial.log \
 		-display none \
 		-no-reboot \
-		-d int,cpu_reset -D qemu-debug.log
 
 clean:
 	cargo clean --manifest-path asteria-bootloader/Cargo.toml
