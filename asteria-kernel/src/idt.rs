@@ -62,10 +62,24 @@ pub fn load() {
 unsafe extern "C" fn exception_handler(frame: *const InteruptFrame) {
     let frame = unsafe { &*frame };
     crate::println!(
-        "EXCEPTION: vector={}, error_code={:#x}, rip={:#x}",
-        frame.vector, frame.error_code, frame.rip
+        "EXCEPTION: {} (vector {}), error_code={:#x}, rip={:#x}",
+        exception_name(frame.vector),
+        frame.vector,
+        frame.error_code,
+        frame.rip
     );
     loop {}
+}
+
+fn exception_name(vector: u64) -> &'static str {
+    match vector {
+        0 => "Divide-by-zero",
+        6 => "Invalid opcode",
+        8 => "Double fault",
+        13 => "General protection fault",
+        14 => "Page fault",
+        _ => "Unknown exception",
+    }
 }
 
 #[repr(C)]

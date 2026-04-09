@@ -155,7 +155,11 @@ extern "efiapi" fn efi_main(image: usize, system_table: *mut EfiSystemTable) -> 
         ((*boot_services).exit_boot_services)(image, map_key);
         serial_print(b"10: exit_boot_services done\n");
 
-        let entry_fn: extern "C" fn() -> ! = core::mem::transmute(entry_point);
-        entry_fn();
+        let entry_fn: extern "sysv64" fn(u64, u64, u64) -> ! = core::mem::transmute(entry_point);
+        entry_fn(
+            memory_map_buffer,
+            memory_map_size as u64,
+            descriptor_size as u64,
+        );
     }
 }

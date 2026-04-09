@@ -11,5 +11,6 @@ BdsDxe: starting Boot0002 "UEFI QEMU HARDDISK QM00001 " from PciRoot(0x0)/Pci(0x
 9: get_memory_map done
 10: exit_boot_services done
 Hello, Asteria Kernel!
-Testing number: 42
-EXCEPTION: vector=0, error_code=0x0, rip=0x5f8c3f4
+Memory map: addr=0x5f87000, size=5952, desc_size=48
+Allocated page at: 0x100000
+Allocated page at: 0x101000
