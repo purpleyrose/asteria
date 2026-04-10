@@ -1,7 +1,7 @@
 use core::alloc::GlobalAlloc;
 
 use crate::memory::FrameAllocator;
-use crate::slab::SlabAllocator;
+use crate::memory::slab::SlabAllocator;
 use spin;
 pub struct KernelAllocatorInner {
     frame_allocator: FrameAllocator,

@@ -3,9 +3,7 @@
 mod gdt;
 mod idt;
 mod memory;
-mod paging;
 mod serial;
-mod slab;
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
@@ -32,21 +30,21 @@ pub extern "C" fn kernel_main(memory_map: u64, memory_map_size: u64, descriptor_
         println!("Failed to allocate page");
     }
 
-    paging::init(&mut allocator);
+    memory::paging::init(&mut allocator);
 
     println!("Paging initalized");
 
     let slab_page = allocator
         .allocate_page()
         .expect("Failed to allocate page for slab");
-    let mut slab = slab::Slab::new(slab_page, 64);
+    let mut slab = memory::slab::Slab::new(slab_page, 64);
     if let Some(obj) = slab.allocate() {
         println!("Allocated object at: {:#x}", obj as u64);
     } else {
         println!("Failed to allocate object from slab");
     }
 
-    let mut slab_alloc = slab::SlabAllocator::init(&mut allocator);
+    let mut slab_alloc = memory::slab::SlabAllocator::init(&mut allocator);
     if let Some(p) = slab_alloc.allocate(100) {
         println!("Allocated 100 bytes at: {:#x}", p as u64);
     } else {

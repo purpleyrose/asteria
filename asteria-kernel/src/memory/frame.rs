@@ -1,4 +1,5 @@
 use crate::println;
+
 #[repr(C)]
 pub struct EfiMemoryDescriptor {
     pub mem_type: u32,
@@ -70,7 +71,7 @@ pub fn init(memory_map: u64, memory_map_size: u64, descriptor_size: u64) -> Fram
                 let byte_index = page / 8;
                 let bit_index = page % 8;
                 unsafe {
-                    *bitmap.add(byte_index) |= 1 << bit_index; // Mark as used
+                    *bitmap.add(byte_index) |= 1 << bit_index; // Mark as free
                 }
             }
         }

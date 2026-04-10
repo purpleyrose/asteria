@@ -1,0 +1,6 @@
+pub mod allocator;
+pub mod frame;
+pub mod paging;
+pub mod slab;
+
+pub use frame::{EfiMemoryDescriptor, FrameAllocator, init, print_memory_map};
