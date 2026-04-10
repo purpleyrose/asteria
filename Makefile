@@ -34,7 +34,7 @@ run: build
 		$(MACHINE) \
 		$(BIOS) \
 		-drive format=raw,file=fat:rw:esp \
-		-serial file:asteria-serial.log \
+		-serial stdio \
 		-display none \
 		-no-reboot \
 
