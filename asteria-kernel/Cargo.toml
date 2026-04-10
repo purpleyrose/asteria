@@ -6,7 +6,7 @@ edition = "2024"
 [build-dependencies]
 cc = "1.2.59"
 [dependencies]
-
+spin = {version = "0.10.0", default-features = false, features = ["spin_mutex"]}
 
 [profile.dev]
 panic = "abort"

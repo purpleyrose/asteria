@@ -21,8 +21,9 @@ pub fn print_memory_map(memory_map: u64, memory_map_size: u64, descriptor_size: 
 }
 
 pub struct FrameAllocator {
-    bitmap: *mut u8,    // Pointer to the bitmap
-    total_pages: usize, // Total number of pages
+    bitmap: *mut u8,      // Pointer to the bitmap
+    total_pages: usize,   // Total number of pages
+    pub max_address: u64, // Maximum physical address
 }
 
 pub fn init(memory_map: u64, memory_map_size: u64, descriptor_size: u64) -> FrameAllocator {
@@ -41,7 +42,7 @@ pub fn init(memory_map: u64, memory_map_size: u64, descriptor_size: u64) -> Fram
     for i in 0..count {
         let desc = unsafe { &*((memory_map + i * descriptor_size) as *const EfiMemoryDescriptor) };
         let end = desc.phys_start + desc.num_pages * 4096;
-        if end > max_address {
+        if end > max_address && desc.mem_type == 7 {
             max_address = end;
         }
     }
@@ -99,6 +100,7 @@ pub fn init(memory_map: u64, memory_map_size: u64, descriptor_size: u64) -> Fram
     FrameAllocator {
         bitmap,
         total_pages,
+        max_address,
     }
 }
 
