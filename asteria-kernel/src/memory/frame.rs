@@ -1,5 +1,4 @@
 use crate::println;
-
 #[repr(C)]
 pub struct EfiMemoryDescriptor {
     pub mem_type: u32,
@@ -71,7 +70,7 @@ pub fn init(memory_map: u64, memory_map_size: u64, descriptor_size: u64) -> Fram
                 let byte_index = page / 8;
                 let bit_index = page % 8;
                 unsafe {
-                    *bitmap.add(byte_index) |= 1 << bit_index; // Mark as free
+                    *bitmap.add(byte_index) |= 1 << bit_index; // Mark as used
                 }
             }
         }
@@ -127,6 +126,46 @@ impl FrameAllocator {
         let bit_index = page % 8;
         unsafe {
             *self.bitmap.add(byte_index) |= 1 << bit_index; // Mark as free
+        }
+    }
+
+    pub fn allocate_pages(&mut self, num_pages: usize) -> Option<u64> {
+        let mut consecutive = 0;
+        let mut start_page = 0;
+        for page in 0..self.total_pages {
+            let byte_index = page / 8;
+            let bit_index = page % 8;
+            unsafe {
+                if (*self.bitmap.add(byte_index) & (1 << bit_index)) != 0 {
+                    if consecutive == 0 {
+                        start_page = page;
+                    }
+                    consecutive += 1;
+                    if consecutive == num_pages {
+                        // Mark pages as used
+                        for p in start_page..(start_page + num_pages) {
+                            let b_index = p / 8;
+                            let bt_index = p % 8;
+                            *self.bitmap.add(b_index) &= !(1 << bt_index);
+                        }
+                        return Some((start_page as u64) * 4096);
+                    }
+                } else {
+                    consecutive = 0; // Reset if we find a used page
+                }
+            }
+        }
+        None // No contiguous block found
+    }
+
+    pub fn free_pages(&mut self, addr: u64, num_pages: usize) {
+        let start_page = (addr / 4096) as usize;
+        for p in start_page..(start_page + num_pages) {
+            let byte_index = p / 8;
+            let bit_index = p % 8;
+            unsafe {
+                *self.bitmap.add(byte_index) |= 1 << bit_index; // Mark as free
+            }
         }
     }
 }

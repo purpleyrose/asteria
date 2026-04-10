@@ -11,10 +11,4 @@ BdsDxe: starting Boot0002 "UEFI QEMU HARDDISK QM00001 " from PciRoot(0x0)/Pci(0x
 9: get_memory_map done
 10: exit_boot_services done
 Hello, Asteria!
-Allocated page at: 0x100000
-Allocated page at: 0x101000
-Paging initalized
-Allocated object at: 0x145000
-Allocated 100 bytes at: 0x148000
-Allocated 2000 bytes at: 0x14c000
-Failed to allocate 3000 bytes from slab allocator
+Vector len: 3, first: 42

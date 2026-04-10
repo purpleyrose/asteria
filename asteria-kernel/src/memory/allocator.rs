@@ -27,15 +27,22 @@ impl KernelAllocator {
     }
 }
 
+unsafe impl Send for KernelAllocator {}
+unsafe impl Sync for KernelAllocator {}
+
 unsafe impl GlobalAlloc for KernelAllocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         let mut guard = self.inner.lock();
         if let Some(inner) = guard.as_mut() {
-            if let Some(ptr) = inner.slab_allocator.allocate(layout.size() as u64) {
-                return ptr as *mut u8;
-            }
-            if let Some(page) = inner.frame_allocator.allocate_page() {
-                return page as *mut u8;
+            if layout.size() <= 2048 {
+                if let Some(ptr) = inner.slab_allocator.allocate(layout.size() as u64) {
+                    return ptr as *mut u8;
+                }
+            } else {
+                let num_pages = (layout.size() + 4095) / 4096;
+                if let Some(page) = inner.frame_allocator.allocate_pages(num_pages as usize) {
+                    return page as *mut u8;
+                }
             }
         }
         core::ptr::null_mut()
@@ -44,7 +51,12 @@ unsafe impl GlobalAlloc for KernelAllocator {
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
         let mut guard = self.inner.lock();
         if let Some(inner) = guard.as_mut() {
-            inner.slab_allocator.free(ptr, layout.size() as u64);
+            if layout.size() <= 2048 {
+                inner.slab_allocator.free(ptr, layout.size() as u64);
+            } else {
+                let num_pages = (layout.size() + 4095) / 4096;
+                inner.frame_allocator.free_pages(ptr as u64, num_pages);
+            }
         }
     }
 }

@@ -1,9 +1,16 @@
 #![no_std]
 #![no_main]
+extern crate alloc;
 mod gdt;
 mod idt;
 mod memory;
 mod serial;
+
+use alloc::vec::Vec;
+
+#[global_allocator]
+static GLOBAL_ALLOCATOR: memory::allocator::KernelAllocator =
+    memory::allocator::KernelAllocator::new();
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
@@ -17,51 +24,16 @@ pub extern "C" fn kernel_main(memory_map: u64, memory_map_size: u64, descriptor_
 
     println!("Hello, Asteria!");
 
-    let mut allocator = memory::init(memory_map, memory_map_size, descriptor_size);
-    if let Some(page) = allocator.allocate_page() {
-        println!("Allocated page at: {:#x}", page);
-    } else {
-        println!("Failed to allocate page");
-    }
+    let mut frame_allocator = memory::init(memory_map, memory_map_size, descriptor_size);
+    memory::paging::init(&mut frame_allocator);
+    let slab_allocator = memory::slab::SlabAllocator::init(&mut frame_allocator);
+    GLOBAL_ALLOCATOR.init(frame_allocator, slab_allocator);
 
-    if let Some(page) = allocator.allocate_page() {
-        println!("Allocated page at: {:#x}", page);
-    } else {
-        println!("Failed to allocate page");
-    }
-
-    memory::paging::init(&mut allocator);
-
-    println!("Paging initalized");
-
-    let slab_page = allocator
-        .allocate_page()
-        .expect("Failed to allocate page for slab");
-    let mut slab = memory::slab::Slab::new(slab_page, 64);
-    if let Some(obj) = slab.allocate() {
-        println!("Allocated object at: {:#x}", obj as u64);
-    } else {
-        println!("Failed to allocate object from slab");
-    }
-
-    let mut slab_alloc = memory::slab::SlabAllocator::init(&mut allocator);
-    if let Some(p) = slab_alloc.allocate(100) {
-        println!("Allocated 100 bytes at: {:#x}", p as u64);
-    } else {
-        println!("Failed to allocate 100 bytes from slab allocator");
-    }
-
-    if let Some(p) = slab_alloc.allocate(2000) {
-        println!("Allocated 2000 bytes at: {:#x}", p as u64);
-    } else {
-        println!("Failed to allocate 2000 bytes from slab allocator");
-    }
-
-    if let Some(p) = slab_alloc.allocate(3000) {
-        println!("Allocated 3000 bytes at {:#x}", p as u64);
-    } else {
-        println!("Failed to allocate 3000 bytes from slab allocator");
-    }
+    let mut v: Vec<u32> = Vec::new();
+    v.push(42);
+    v.push(100);
+    v.push(200);
+    println!("Vector len: {}, first: {}", v.len(), v[0]);
 
     loop {}
 }
