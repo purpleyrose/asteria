@@ -1,0 +1,27 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The bootloader and kernel are built for bare-metal targets that a
+      # default Rust install doesn't include.
+      - name: Install Rust targets
+        run: |
+          rustup update stable
+          rustup default stable
+          rustup target add x86_64-unknown-uefi x86_64-unknown-none
+
+      - name: Build bootloader and kernel
+        run: make build

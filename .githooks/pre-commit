@@ -1,0 +1,30 @@
+#!/bin/sh
+# Runs automatically before every `git commit`.
+# If this script exits with anything other than 0, git cancels the commit.
+# To skip it once: git commit --no-verify
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+echo "Running pre-commit checks..."
+
+echo "Checking build..."
+if ! make build; then
+    echo "Build failed. Commit aborted."
+    exit 1
+fi
+
+echo "Checking code formatting ..."
+
+echo "Checking asteria-bootloader formatting..."
+if ! cargo fmt --check --manifest-path asteria-bootloader/Cargo.toml; then
+    echo "Code formatting check failed. Commit aborted."
+    exit 1
+fi
+
+echo "Checking asteria-kernel formatting..."
+if ! cargo fmt --check --manifest-path asteria-kernel/Cargo.toml; then
+    echo "Code formatting check failed. Commit aborted."
+    exit 1
+fi
+
+

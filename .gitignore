@@ -14,10 +14,14 @@
 .rustc_info.json
 
 /.claude/*
+/CLAUDE.md
 
 /.vscode/*
 
-/.git/*
+# Editor autosave and backup files
+\#*\#
+.\#*
+*~
 
 qemu-debug.log
 
