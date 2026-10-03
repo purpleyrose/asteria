@@ -1,4 +1,4 @@
-const MAX_ORDER: usize = 11; // 2^11 = 2048 pages = 8MB max block size
+const MAX_ORDER: usize = 11; // 2^11 = 1024 pages = 4MiB max block size
 
 pub struct BuddyAllocator {
     free_lists: [*mut FreeBlock; MAX_ORDER],
@@ -88,5 +88,38 @@ impl BuddyAllocator {
             }
         }
         None // No suitable block found
+    }
+
+    pub unsafe fn free(&mut self, addr: u64, size: u64) {
+        let mut order = size_to_order(size);
+        let mut block_addr = addr;
+
+        while order < MAX_ORDER - 1 {
+            let mut found = false;
+            let buddy_addr = ((block_addr - self.base) ^ (4096 << order)) + self.base;
+            let mut prev: *mut *mut FreeBlock = &mut self.free_lists[order];
+            while !(unsafe { *prev }).is_null() {
+                if unsafe { *prev } as u64 == buddy_addr {
+                    unsafe {
+                        *prev = (**prev).next;
+                    } // Unlink buddy
+                    found = true;
+                    break;
+                }
+                prev = unsafe { &mut (**prev).next };
+            }
+            if !found {
+                break; // Buddy not found, stop coalescing
+            }
+            block_addr = block_addr.min(buddy_addr); // Coalesce
+            order += 1;
+        }
+        // Push the (possibly coalesced) block back onto the free list
+        // Prepend to free list
+        let block = block_addr as *mut FreeBlock;
+        unsafe {
+            (*block).next = self.free_lists[order];
+        }
+        self.free_lists[order] = block;
     }
 }

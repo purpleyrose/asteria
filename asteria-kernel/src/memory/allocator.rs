@@ -1,10 +1,10 @@
 use core::alloc::GlobalAlloc;
 
-use crate::memory::FrameAllocator;
+use crate::memory::buddy::BuddyAllocator;
 use crate::memory::slab::SlabAllocator;
 use spin;
 pub struct KernelAllocatorInner {
-    frame_allocator: FrameAllocator,
+    buddy_allocator: BuddyAllocator,
     slab_allocator: SlabAllocator,
 }
 
@@ -19,9 +19,9 @@ impl KernelAllocator {
         }
     }
 
-    pub fn init(&self, frame: FrameAllocator, slab: SlabAllocator) {
+    pub fn init(&self, buddy: BuddyAllocator, slab: SlabAllocator) {
         *self.inner.lock() = Some(KernelAllocatorInner {
-            frame_allocator: frame,
+            buddy_allocator: buddy,
             slab_allocator: slab,
         });
     }
@@ -35,13 +35,15 @@ unsafe impl GlobalAlloc for KernelAllocator {
         let mut guard = self.inner.lock();
         if let Some(inner) = guard.as_mut() {
             if layout.size() <= 2048 {
-                if let Some(ptr) = inner.slab_allocator.allocate(layout.size() as u64) {
+                if let Some(ptr) = inner
+                    .slab_allocator
+                    .allocate(layout.size() as u64, &mut inner.buddy_allocator)
+                {
                     return ptr as *mut u8;
                 }
             } else {
-                let num_pages = (layout.size() + 4095) / 4096;
-                if let Some(page) = inner.frame_allocator.allocate_pages(num_pages as usize) {
-                    return page as *mut u8;
+                if let Some(addr) = inner.buddy_allocator.allocate(layout.size() as u64) {
+                    return addr as *mut u8;
                 }
             }
         }
@@ -54,8 +56,11 @@ unsafe impl GlobalAlloc for KernelAllocator {
             if layout.size() <= 2048 {
                 inner.slab_allocator.free(ptr, layout.size() as u64);
             } else {
-                let num_pages = (layout.size() + 4095) / 4096;
-                inner.frame_allocator.free_pages(ptr as u64, num_pages);
+                unsafe {
+                    inner
+                        .buddy_allocator
+                        .free(ptr as u64, layout.size() as u64);
+                }
             }
         }
     }

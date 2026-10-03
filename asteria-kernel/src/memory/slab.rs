@@ -1,36 +1,51 @@
-use crate::memory;
+use crate::memory::buddy::BuddyAllocator;
 
+/// One slab = one 4096-byte page from the buddy. The `Slab` header lives at the
+/// very start of that page (so it is 4096-aligned); the rest of the page is
+/// divided into `object_size` slots threaded with an embedded free list.
 #[repr(C)]
 pub struct Slab {
-    page: u64,
+    next: *mut Slab, // next slab in this size class's list (intrusive)
     object_size: u64,
     free_list: *mut u8,
 }
 
 impl Slab {
-    pub fn new(page: u64, object_size: u64) -> Self {
-        let count = 4096 / object_size;
+    /// Carve a fresh slab out of a 4096-byte, page-aligned `page`.
+    /// Returns a pointer to the in-page `Slab` header.
+    pub fn new(page: u64, object_size: u64) -> *mut Slab {
+        // Reserve the front of the page for the header, rounded up to a whole
+        // slot so the first object stays `object_size`-aligned.
+        let header_size =
+            ((core::mem::size_of::<Slab>() as u64 + object_size - 1) / object_size) * object_size;
+        let data_start = page + header_size;
+        let count = (4096 - header_size) / object_size;
+
+        // Thread the embedded free list through every slot.
         for i in 0..count {
-            let slot = (page + i * object_size) as *mut u64;
+            let slot = (data_start + i * object_size) as *mut u64;
             let next = if i + 1 < count {
-                page + (i + 1) * object_size
+                data_start + (i + 1) * object_size
             } else {
-                0 // End of free list
+                0 // end of free list
             };
             unsafe {
                 *slot = next;
             }
         }
-        Self {
-            page,
-            object_size,
-            free_list: page as *mut u8,
+
+        let slab = page as *mut Slab;
+        unsafe {
+            (*slab).next = core::ptr::null_mut();
+            (*slab).object_size = object_size;
+            (*slab).free_list = data_start as *mut u8;
         }
+        slab
     }
 
     pub fn allocate(&mut self) -> Option<*mut u8> {
         if self.free_list.is_null() {
-            return None;
+            return None; // this slab is full
         }
         let obj = self.free_list;
         unsafe {
@@ -49,32 +64,76 @@ impl Slab {
 
 const SIZE_CLASSES: [u64; 7] = [32, 64, 128, 256, 512, 1024, 2048];
 
+/// One size class: a singly linked list of slabs, all carved for `object_size`.
+/// Slabs are created lazily — the list starts empty and grows on demand.
+pub struct SlabClass {
+    head: *mut Slab,
+    object_size: u64,
+}
+
+impl SlabClass {
+    pub fn allocate(&mut self, allocator: &mut BuddyAllocator) -> Option<*mut u8> {
+        // Fast path: try every slab already in this class's list.
+        let mut slab = self.head;
+        while !slab.is_null() {
+            if let Some(obj) = unsafe { (*slab).allocate() } {
+                return Some(obj);
+            }
+            slab = unsafe { (*slab).next };
+        }
+
+        // Every existing slab is full (or the list is empty). Grow the class:
+        // pull a fresh page from the buddy, carve a slab, prepend it, allocate.
+
+        if let Some(page) = allocator.allocate(4096) {
+            let new_slab = Slab::new(page, self.object_size);
+            unsafe {
+                (*new_slab).next = self.head;
+            }
+            self.head = new_slab;
+            unsafe { (*new_slab).allocate() }
+        } else {
+            None
+        }
+    }
+
+    pub fn free(&mut self, ptr: *mut u8) {
+        // O(1): every slab is one 4096-aligned page with its header at the
+        // page base, so masking the low 12 bits of any object pointer yields
+        // the owning slab's header.
+        let slab = ((ptr as u64) & !0xFFFu64) as *mut Slab;
+        unsafe {
+            (*slab).free(ptr);
+        }
+    }
+}
+
 pub struct SlabAllocator {
-    slabs: [Slab; SIZE_CLASSES.len()],
+    classes: [SlabClass; SIZE_CLASSES.len()],
 }
 
 impl SlabAllocator {
-    pub fn init(allocator: &mut memory::FrameAllocator) -> SlabAllocator {
-        let slabs = core::array::from_fn(|i| {
-            let page = allocator.allocate_page().expect("No page for slab");
-            Slab::new(page, SIZE_CLASSES[i])
+    pub fn init() -> SlabAllocator {
+        let classes = core::array::from_fn(|i| SlabClass {
+            head: core::ptr::null_mut(),
+            object_size: SIZE_CLASSES[i],
         });
-        SlabAllocator { slabs }
+        SlabAllocator { classes }
     }
 
-    pub fn allocate(&mut self, size: u64) -> Option<*mut u8> {
-        for (i, &class_size) in SIZE_CLASSES.iter().enumerate() {
-            if size <= class_size {
-                return self.slabs[i].allocate();
+    pub fn allocate(&mut self, size: u64, allocator: &mut BuddyAllocator) -> Option<*mut u8> {
+        for class in self.classes.iter_mut() {
+            if size <= class.object_size {
+                return class.allocate(allocator);
             }
         }
-        None // Size too large
+        None // size too large for the slab allocator
     }
 
     pub fn free(&mut self, ptr: *mut u8, size: u64) {
-        for (i, &class_size) in SIZE_CLASSES.iter().enumerate() {
-            if size <= class_size {
-                self.slabs[i].free(ptr);
+        for class in self.classes.iter_mut() {
+            if size <= class.object_size {
+                class.free(ptr);
                 return;
             }
         }
