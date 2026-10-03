@@ -28,18 +28,8 @@ const SMOKE_N: usize = 300;
 /// proof the grow path fired; with SMOKE_N = 300 and 127 objects per 32-byte
 /// slab, we expect exactly 3.
 fn distinct_page_count(ptrs: &[*mut u8]) -> usize {
-    // TODO(human): return the number of distinct (p as u64 & !0xFFF) values
-    // across `ptrs`.
-    //
-    // There's no HashSet here (no_std, and we *are* the allocator). Two valid
-    // shapes, and the choice is the lesson:
-    //   - General: O(n^2) — for each ptr, check whether its page base already
-    //     appeared earlier in the slice. Correct regardless of ordering.
-    //   - Fast: O(n) — exploit that this test fills slabs sequentially with no
-    //     intervening frees, so allocations are grouped by slab and the page
-    //     base only changes at slab boundaries. Count the changes (+1).
-    // Pick one and note in a comment which assumption you're relying on.
-
+    // Relies on the test filling slabs one after another with no frees in
+    // between, so the page base only changes at a slab boundary.
     let mut count = 0;
     let mut last_page_base = 0;
     for &ptr in ptrs {

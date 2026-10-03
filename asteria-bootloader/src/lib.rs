@@ -49,7 +49,6 @@ pub struct EfiTableHeader {
     pub reserved: u32,
 }
 
-
 #[repr(C)]
 pub struct EfiBootServices {
     pub hdr: EfiTableHeader,
@@ -57,7 +56,13 @@ pub struct EfiBootServices {
     pub restore_tpl: usize,
     pub allocate_pages: extern "efiapi" fn(AllocateType, MemoryType, usize, *mut u64) -> usize, // 3rd param represents the number of pages to allocate, and the 4th param is a pointer to a u64 where the allocated address will be stored
     pub free_pages: extern "efiapi" fn(u64, usize) -> usize, // 1st param is the starting address of the pages to free, and the 2nd param is the number of pages to free
-    pub get_memory_map: extern "efiapi" fn(*mut usize, *mut EfiMemoryDescriptor, *mut usize, *mut usize, *mut u32) -> usize, 
+    pub get_memory_map: extern "efiapi" fn(
+        *mut usize,
+        *mut EfiMemoryDescriptor,
+        *mut usize,
+        *mut usize,
+        *mut u32,
+    ) -> usize,
     pub allocate_pool: usize,
     pub free_pool: usize,
     pub create_event: usize,
@@ -85,7 +90,8 @@ pub struct EfiBootServices {
     pub set_watchdog_timer: usize,
     pub connect_controller: usize,
     pub disconnect_controller: usize,
-    pub open_protocol: extern "efiapi" fn(usize,  *const EfiGuid, *mut *mut usize, usize, usize, u32) -> usize,
+    pub open_protocol:
+        extern "efiapi" fn(usize, *const EfiGuid, *mut *mut usize, usize, usize, u32) -> usize,
     pub close_protocol: usize,
     pub open_protocol_information: usize,
     pub protocols_per_handle: usize,
@@ -94,8 +100,8 @@ pub struct EfiBootServices {
     pub install_multiple_protocol_interfaces: usize,
     pub uninstall_multiple_protocol_interfaces: usize,
     pub calculate_crc32: usize, // 32-bit CRC calculation function
-    pub copy_mem: usize, // Memory copy function
-    pub set_mem: usize, // Memory set function
+    pub copy_mem: usize,        // Memory copy function
+    pub set_mem: usize,         // Memory set function
     pub create_event_ex: usize, // Extended event creation function
 }
 
@@ -116,19 +122,14 @@ pub struct EfiLoadedImageProtocol {
     pub image_size: u64,
     pub image_code_type: usize,
     pub image_data_type: usize,
-    pub unload: usize, // TODO: Replace with function pointer to image unload function 
+    pub unload: usize, // TODO: Replace with function pointer to image unload function
 }
-
-
 
 #[repr(C)]
 pub struct EfiSimpleFileSystemProtocol {
     pub revision: u64,
     pub open_volume:
-        extern "efiapi" fn(
-            *mut EfiSimpleFileSystemProtocol,
-            *mut *mut EfiFileProtocol,
-        ) -> usize, 
+        extern "efiapi" fn(*mut EfiSimpleFileSystemProtocol, *mut *mut EfiFileProtocol) -> usize,
 }
 
 #[repr(C)]
@@ -138,39 +139,37 @@ pub struct EfiFileProtocol {
         *mut EfiFileProtocol,
         *mut *mut EfiFileProtocol,
         *const u16, // File name as a null-terminated UTF-16 string
-        u64, // Open mode (e.g., read, write, create)
-        u64, // Attributes (e.g., read-only, hidden)
-        
-    )-> usize,
+        u64,        // Open mode (e.g., read, write, create)
+        u64,        // Attributes (e.g., read-only, hidden)
+    ) -> usize,
     pub close: extern "efiapi" fn(*mut EfiFileProtocol) -> usize,
     pub delete: extern "efiapi" fn(*mut EfiFileProtocol) -> usize,
     pub read: extern "efiapi" fn(
         *mut EfiFileProtocol,
         *mut usize, // Size of the buffer to read into, and on return, the actual number of bytes read
-        *mut u8, // Buffer to read data into
+        *mut u8,    // Buffer to read data into
     ) -> usize,
     pub write: extern "efiapi" fn(
         *mut EfiFileProtocol,
         *mut usize, // Size of the buffer to write from, and on return, the actual number of bytes written
-        *const u8, // Buffer containing data to write
-    ) -> usize, 
+        *const u8,  // Buffer containing data to write
+    ) -> usize,
     pub get_position: extern "efiapi" fn(*mut EfiFileProtocol, *mut u64) -> usize,
     pub set_position: extern "efiapi" fn(*mut EfiFileProtocol, u64) -> usize,
     pub get_info: extern "efiapi" fn(
         *mut EfiFileProtocol,
         *mut EfiGuid, // GUID of the information class to retrieve
         *mut usize, // Size of the buffer to receive the information, and on return, the actual size of the information returned
-        *mut u8, // Buffer to receive the information
+        *mut u8,    // Buffer to receive the information
     ) -> usize,
     pub set_info: extern "efiapi" fn(
         *mut EfiFileProtocol,
         *mut EfiGuid, // GUID of the information class to set
-        usize, // Size of the information being set
-        *const u8, // Buffer containing the information to set
+        usize,        // Size of the information being set
+        *const u8,    // Buffer containing the information to set
     ) -> usize,
-     pub flush: extern "efiapi" fn(*mut EfiFileProtocol) -> usize,
+    pub flush: extern "efiapi" fn(*mut EfiFileProtocol) -> usize,
 }
-
 
 #[repr(usize)]
 pub enum AllocateType {
@@ -208,7 +207,7 @@ pub struct EfiFileInfo {
     pub last_access_time: EfiTime,
     pub modification_time: EfiTime,
     pub attribute: u64,
-   pub file_name: [u16; 1], // Null-terminated UTF-16 string for the file name
+    pub file_name: [u16; 1], // Null-terminated UTF-16 string for the file name
 }
 
 #[repr(C)]
@@ -223,7 +222,7 @@ pub struct EfiTime {
     pub nanosecond: u32,
     pub time_zone: i16,
     pub daylight: u8,
-    pub pad2: u8, // Padding to align to 4 bytes    
+    pub pad2: u8, // Padding to align to 4 bytes
 }
 
 #[repr(C)]
@@ -280,10 +279,16 @@ pub struct EfiSimpleTextOutputProtocol {
     pub reset: extern "efiapi" fn(*mut EfiSimpleTextOutputProtocol, bool) -> usize,
     pub output_string: extern "efiapi" fn(*mut EfiSimpleTextOutputProtocol, *const u16) -> usize,
     pub test_string: extern "efiapi" fn(*mut EfiSimpleTextOutputProtocol, *const u16) -> usize,
-    pub query_mode: extern "efiapi" fn(*mut EfiSimpleTextOutputProtocol, usize, *mut usize, *mut usize) -> usize,
+    pub query_mode: extern "efiapi" fn(
+        *mut EfiSimpleTextOutputProtocol,
+        usize,
+        *mut usize,
+        *mut usize,
+    ) -> usize,
     pub set_mode: extern "efiapi" fn(*mut EfiSimpleTextOutputProtocol, usize) -> usize,
     pub set_attribute: extern "efiapi" fn(*mut EfiSimpleTextOutputProtocol, usize) -> usize,
     pub clear_screen: extern "efiapi" fn(*mut EfiSimpleTextOutputProtocol) -> usize,
-    pub set_cursor_position: extern "efiapi" fn(*mut EfiSimpleTextOutputProtocol, usize, usize) -> usize,
+    pub set_cursor_position:
+        extern "efiapi" fn(*mut EfiSimpleTextOutputProtocol, usize, usize) -> usize,
     pub enable_cursor: extern "efiapi" fn(*mut EfiSimpleTextOutputProtocol, bool) -> usize,
 }

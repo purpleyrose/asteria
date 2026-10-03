@@ -125,4 +125,3 @@ pub fn load_elf(data: *const u8, load_base: u64) -> Option<u64> {
     }
     Some(load_base + header.e_entry)
 }
-

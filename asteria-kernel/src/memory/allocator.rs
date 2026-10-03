@@ -57,9 +57,7 @@ unsafe impl GlobalAlloc for KernelAllocator {
                 inner.slab_allocator.free(ptr, layout.size() as u64);
             } else {
                 unsafe {
-                    inner
-                        .buddy_allocator
-                        .free(ptr as u64, layout.size() as u64);
+                    inner.buddy_allocator.free(ptr as u64, layout.size() as u64);
                 }
             }
         }

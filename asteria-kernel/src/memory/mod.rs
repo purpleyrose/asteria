@@ -37,23 +37,6 @@ pub fn init(
     memory_map_size: u64,
     descriptor_size: u64,
 ) -> (buddy::BuddyAllocator, u64) {
-    // TODO(human): implement the UEFI memory map walk.
-    //
-    // Steps:
-    //   1. Walk the descriptors (count = memory_map_size / descriptor_size).
-    //      Each descriptor is at `memory_map + i * descriptor_size`, cast as
-    //      *const EfiMemoryDescriptor. Note: you must use `descriptor_size`
-    //      as the stride, NOT `size_of::<EfiMemoryDescriptor>()` — UEFI can
-    //      add trailing padding.
-    //   2. Find the largest type-7 region (by num_pages). This is where the
-    //      buddy will live.
-    //   3. Compute max_address = highest (phys_start + num_pages * 4096) across
-    //      ALL descriptors, not just type 7 — paging needs to map the kernel's
-    //      loader-data region and the memory map itself, which aren't type 7.
-    //   4. Create a BuddyAllocator with new(), then call init() on the largest
-    //      region's (phys_start, num_pages * 4096). `init` is `unsafe` because
-    //      it writes FreeBlock nodes into the memory region.
-    //   5. Return (buddy, max_address).
     let mut largest: Option<&EfiMemoryDescriptor> = None;
     let mut max_address = 0;
     let count = memory_map_size / descriptor_size;
